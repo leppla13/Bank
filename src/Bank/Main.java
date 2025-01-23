@@ -101,4 +101,24 @@ public class Main {
             }
         }
     }
+
+    private static void userMenu(Scanner sc, int userId) {
+        boolean loggedIn = true;
+        while (loggedIn) {
+            System.out.println("""
+            1. Перевод
+            2. Пополнить
+            3. Снять
+            4. Выход
+            Выберите действие:""");
+
+            int choice = sc.nextInt();
+            switch (choice) {
+                case 1 -> transferMoney(sc, userId);
+                case 2 -> depositMoney(sc, userId);
+                case 3 -> withdrawMoney(sc, userId);
+                case 4 -> loggedIn = false;
+            }
+        }
+    }
 }
