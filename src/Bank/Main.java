@@ -1,5 +1,7 @@
 package Bank;
 
+import javax.xml.crypto.Data;
+import java.sql.*;
 import java.util.Scanner;
 
 public class Main {
@@ -37,10 +39,59 @@ public class Main {
                     String login = sc.next();
                     System.out.print("\nПароль: (Например, ivan123): ");
                     String password = sc.next();
+
+                    try (Connection conn = Database.getConnection()) {
+                        String sql = "INSERT INTO users (name, last_name, middle_name, birthday, login, password) VALUES (?, ?, ?, ?, ?, ?)";
+                        PreparedStatement preparedStatement = conn.prepareStatement(sql, PreparedStatement.RETURN_GENERATED_KEYS);
+                        preparedStatement.setString(1, name);
+                        preparedStatement.setString(2, lastName);
+                        preparedStatement.setString(3, middleName);
+                        preparedStatement.setDate(4, Date.valueOf(birthday.replace('.', '-')));
+                        preparedStatement.setString(5, login);
+                        preparedStatement.setString(6, password);
+                        preparedStatement.executeUpdate();
+
+                        ResultSet rs = preparedStatement.getGeneratedKeys();
+                        if (rs.next()) {
+                            int userId = rs.getInt(1);
+                            // создание аккаунта
+                            BankAccount account = new BankAccount(userId, 0);
+                            String accSql = "INSERT INTO accounts (user_id, balance) VALUES (?, ?)";
+                            PreparedStatement accStatement = conn.prepareStatement(accSql);
+                            accStatement.setInt(1, userId);
+                            accStatement.setDouble(2, 0);
+                            accStatement.executeUpdate();
+                        }
+                        System.out.println("Регистрация прошла успешно.");
+                    } catch (SQLException e) {
+                        System.out.println("Ошибка регистрации: " + e.getMessage());
+                    }
                 }
 
                 case 2 -> {
+                    System.out.print("Введите логин: ");
+                    String login = sc.next();
+                    System.out.print("Введите пароль: ");
+                    String password = sc.next();
 
+                    try (Connection conn = Database.getConnection()) {
+                        String sql = "SELECT * FROM users WHERE login = ? AND password = ?";
+                        PreparedStatement preparedStatement = conn.prepareStatement(sql);
+                        preparedStatement.setString(1, login);
+                        preparedStatement.setString(2, password);
+                        ResultSet rs = preparedStatement.executeQuery();
+
+                        if (rs.next()) {
+                            System.out.println("Вход выполнен успешно.");
+                            userMenu(sc, rs.getInt("id"));
+                        }
+
+                        else {
+                            System.out.println("Введены неверные данные.");
+                        }
+                    } catch (SQLException e) {
+                        System.out.println("Ошибка входа: " + e.getMessage());
+                    }
                 }
 
                 case 3 -> {
